@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intimate Dark-Themed Get Well Bouquet</title>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #0d1b2a; /* Deep charcoal night sky */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #f5e6b3; /* Gentle cream/gold text */
+            font-family: 'Dancing Script', cursive;
+            flex-direction: column;
+        }
+
+        canvas {
+            background-color: #0d1b2a;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7);
+        }
+
+        #message-container {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            font-size: 32px;
+            opacity: 0;
+            transition: opacity 1.5s ease-out 5s; /* Fade in after flowers bloom */
+            width: 100%;
+        }
+
+        #message-container span {
+            color: #daa520; /* Deep golden accent */
+        }
+        
+        button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background-color: transparent;
+            color: #f5e6b3;
+            border: 2px solid #f5e6b3;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 18px;
+            opacity: 0.8;
+        }
+        button:hover {
+            opacity: 1;
+            background-color: #f5e6b3;
+            color: #0d1b2a;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="bouquetCanvas" width="700" height="850"></canvas>
+    
+    <div id="message-container">
+        Get Well Soon, my darling.<br>
+        Wishing you a <span>speedy recovery</span>.<br>
+        With all my love.
+    </div>
+    
+    <button id="replayBtn">Replay Bloom</button>
+
+    <script>
+        const canvas = document.getElementById('bouquetCanvas');
+        const ctx = canvas.getContext('2d');
+        const replayBtn = document.getElementById('replayBtn');
+        const messageContainer = document.getElementById('message-container');
+
+        const totalFlowers = 15;
+        const width = canvas.width;
+        const height = canvas.height;
+        const centerX = width / 2;
+        const centerY = height - 150; // common stem base
+
+        let animationTime = 0;
+        let bloomDuration = 6; // seconds for full bloom
+        let isReplaying = false;
+
+        // Assets Description from user / previous context:
+        // Stems: Rich forest green, curved.
+        // Sunflowers: Golden yellow petals, textured brown center.
+        // White Roses: Elegant, creamy white petals.
+        // Tulips: Contrasting deep crimson and deep violet.
+
+        class Flower {
+            constructor(type, x, y, delay, color) {
+                this.type = type;
+                this.baseX = centerX;
+                this.baseY = centerY;
+                this.targetX = x;
+                this.targetY = y;
+                this.delay = delay; // blooming delay
+                this.color = color;
+                this.maxSize = (type === 'sunflower') ? 110 : (type === 'rose' ? 80 : 70);
+                this.size = 0;
+                this.stemPath = new Path2D();
+                this.generateStemPath();
+            }
+
+            generateStemPath() {
+                // Curved stems from common base
+                this.stemPath.moveTo(this.baseX, this.baseY);
+                // Intermediate bezier points for elegant curve
+                const cp1x = this.baseX + (this.targetX - this.baseX) * 0.3;
+                const cp1y = this.baseY - (this.baseY - this.targetY) * 0.1;
+                const cp2x = this.baseX + (this.targetX - this.baseX) * 0.7;
+                const cp2y = this.baseY - (this.baseY - this.targetY) * 0.9;
+                this.stemPath.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, this.targetX, this.targetY);
+            }
+
+            update(time) {
+                const bloomProgress = Math.max(0, (time - this.delay) / bloomDuration);
+                // Make the size bloom gracefully with an ease-out
+                this.size = Math.min(1, bloomProgress * (2 - bloomProgress)) * this.maxSize;
+            }
+
+            draw() {
+                // Draw Stem first (dark rich forest green)
+                ctx.save();
+                ctx.strokeStyle = '#1e3c1a'; // Dark intimate green
+                ctx.lineWidth = 4;
+                ctx.lineJoin = 'round';
+                ctx.lineCap = 'round';
+                ctx.stroke(this.stemPath);
+                ctx.restore();
+
+                // Draw Flower Head only if blooming
+                if (this.size > 1) {
+                    ctx.save();
+                    ctx.translate(this.targetX, this.targetY);
+                    
+                    if (this.type === 'sunflower') {
+                        // Golden petals
+                        ctx.fillStyle = '#daa520'; 
+                        for (let i = 0; i < 20; i++) {
+                            ctx.beginPath();
+                            ctx.ellipse(0, 0, this.size * 0.45, this.size * 0.1, (i * (360 / 20) * Math.PI) / 180, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                        // Brown Center
+                        ctx.beginPath();
+                        ctx.arc(0, 0, this.size * 0.18, 0, Math.PI * 2);
+                        const centerGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, this.size * 0.18);
+                        centerGradient.addColorStop(0, '#5d4037'); // light brown
+                        centerGradient.addColorStop(1, '#3e2723'); // dark brown
+                        ctx.fillStyle = centerGradient;
+                        ctx.fill();
+                        
+                    } else if (this.type === 'rose') {
+                        // Creamy White Rose
+                        ctx.fillStyle = '#f5e6b3'; // Cream
+                        ctx.beginPath();
+                        // Multiple layers for petals effect
+                        for(let i=0; i<6; i++) {
+                            ctx.ellipse(0, 0, this.size * 0.45, this.size * 0.25, (i*60*Math.PI)/180, 0, Math.PI*2);
+                        }
+                        ctx.fill();
+                        // Inner petals darker/softer cream
+                        ctx.fillStyle = '#e1d4ad';
+                        ctx.beginPath();
+                        ctx.arc(0, 0, this.size * 0.2, 0, Math.PI * 2);
+                        ctx.fill();
+
+                    } else if (this.type === 'tulip') {
+                        // Specific tulip shape (U-like)
+                        ctx.fillStyle = this.color;
+                        ctx.beginPath();
+                        ctx.ellipse(0, this.size * 0.05, this.size * 0.35, this.size * 0.5, 0, 0, Math.PI);
+                        ctx.lineTo(-this.size * 0.35, -this.size * 0.3);
+                        ctx.lineTo(0, -this.size * 0.5);
+                        ctx.lineTo(this.size * 0.35, -this.size * 0.3);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                    
+                    ctx.restore();
+                }
+            }
+        }
+
+        const flowers = [];
+
+        function initFlowers() {
+            flowers.length = 0; // Clear existing
+            
+            // Generate flowers (matching the aesthetic of image_0.png)
+            // Stems spread out from the common base
+            
+            // --- SUNFLOWERS (2 main ones) ---
+            flowers.push(new Flower('sunflower', 480, 200, 0)); // Right-center main
+            flowers.push(new Flower('sunflower', 220, 230, 0.5)); // Left-center main
+            
+            // --- WHITE ROSES (around sunflowers) ---
+            flowers.push(new Flower('rose', centerX, 130, 1.2)); // Top-center rose
+            flowers.push(new Flower('rose', 140, 280, 1.8)); // Left cluster
+            flowers.push(new Flower('rose', 550, 250, 2.2)); // Right cluster
+            flowers.push(new Flower('rose', centerX + 100, 350, 2.8)); // Inner cluster
+            flowers.push(new Flower('rose', centerX - 80, 370, 3.2)); // Inner cluster
+            
+            // --- TULIPS (Contrasting, deep crimson/violet) ---
+            // Crimson Tulips
+            flowers.push(new Flower('tulip', 100, 150, 3.8, '#800000')); // Top-left crimson
+            flowers.push(new Flower('tulip', 580, 380, 4.2, '#800000')); // Bottom-right crimson
+            flowers.push(new Flower('tulip', 180, 450, 4.5, '#800000')); // Mid-left crimson
+            // Violet Tulips
+            flowers.push(new Flower('tulip', 600, 180, 4.8, '#4b0082')); // Top-right violet
+            flowers.push(new Flower('tulip', 50, 350, 5.2, '#4b0082')); // Mid-left violet
+            flowers.push(new Flower('tulip', centerX + 150, 480, 5.5, '#4b0082')); // Bottom-right violet
+            flowers.push(new Flower('tulip', centerX - 180, 100, 5.8, '#4b0082')); // Top-most left
+        }
+
+        function drawBouquetBase() {
+            // Draw common base with an elegant gold ribbon (intimate dark theme)
+            ctx.save();
+            ctx.translate(centerX, centerY + 20);
+            
+            // Soft glowing area behind base
+            ctx.shadowBlur = 40;
+            ctx.shadowColor = 'rgba(218, 165, 32, 0.4)'; // Gold glow
+            ctx.fillStyle = '#0d1b2a'; // background match
+            ctx.beginPath();
+            ctx.arc(0, 0, 70, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Stems meeting
+            ctx.fillStyle = '#1e3c1a';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 20, 50, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Elegant Gold Ribbon
+            ctx.fillStyle = '#daa520'; 
+            ctx.beginPath();
+            ctx.ellipse(0, 10, 40, 25, 0, 0, Math.PI);
+            ctx.lineTo(-40, 40);
+            ctx.lineTo(0, 20);
+            ctx.lineTo(40, 40);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Ribbon center knot
+            ctx.fillStyle = '#b8860b';
+            ctx.beginPath();
+            ctx.arc(0, 10, 10, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function drawBackgroundElements() {
+            // Dark elegant foliage/shapes to nestle the bouquet
+            ctx.fillStyle = '#0a1420'; // even darker green/indigo
+            ctx.beginPath();
+            ctx.ellipse(centerX, centerY - 150, 300, 250, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Subtly lit ground/velvet surface
+            ctx.fillStyle = '#111';
+            ctx.fillRect(0, height - 100, width, 100);
+        }
+
+        function animate(timestamp) {
+            ctx.clearRect(0, 0, width, height);
+            
+            drawBackgroundElements();
+            drawBouquetBase();
+
+            if (!isReplaying) {
+                if (timestamp < bloomDuration * 1000 + 1000) { // Keep re-triggering for duration
+                   // initial time tracking if needed
+                }
+            }
+            // Update and draw all flowers
+            flowers.forEach(flower => {
+                flower.update(animationTime);
+                flower.draw();
+            });
+
+            animationTime += 0.016; // increment animation clock (~16ms per frame)
+            
+            if (animationTime < bloomDuration + 1) { // Total duration of animation
+                requestAnimationFrame(animate);
+            } else {
+                // Done blooming
+                messageContainer.style.opacity = 1; // Trigger fade-in
+                isReplaying = false;
+            }
+        }
+
+        function startAnimation() {
+            isReplaying = true;
+            animationTime = 0;
+            messageContainer.style.opacity = 0;
+            initFlowers();
+            requestAnimationFrame(animate);
+        }
+
+        replayBtn.addEventListener('click', startAnimation);
+
+        // --- Start Initial Animation ---
+        startAnimation();
+
+    </script>
+</body>
+</html>
